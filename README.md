@@ -76,7 +76,7 @@ This launches a frameless, transparent window containing only the iPod. Use the 
 
 On Linux and Windows the native menu is hidden because the window is frameless. The same actions are available through keyboard shortcuts (`Ctrl+O` for music, `Ctrl+Shift+O` for a folder, `Ctrl+P` for play/pause), and **Add Music…** / **Add Folder…** are also available from the iPod's main menu. Dragging audio files onto the window works too.
 
-**Deep folder search:** **Add Folder…** opens a sheet with **Deep search all subfolders** enabled. It walks the whole tree, skips hidden and system folders, continues past unreadable directories, and reports scan/tag progress. Untagged files fall back to the name of the folder they are in, so a parent folder full of artist/album folders keeps the individual album names. Large libraries are imported in one pass.
+**Deep folder search:** **Add Folder…** opens a sheet with **Deep search all subfolders** enabled. Select a parent folder of albums and every subfolder with audio becomes its own album playlist, so a whole artist folder or music drive can be added in one pass. It walks the whole tree, skips hidden and system folders, continues past unreadable directories, and reports folder/album/track progress. Leave the album name blank to keep each folder as a separate album; entering an override merges every untagged file into that one album and is cleared after the import.
 
 The window is just the iPod. Drag the white body — anywhere outside the screen and wheel controls — to move it. Use the close button on hover, or ⌘W/⌘Q on macOS (Ctrl+W/Ctrl+Q on Linux and Windows).
 
@@ -112,8 +112,8 @@ npm run desktop:open
 The GitHub Actions workflow at `.github/workflows/release.yml` builds macOS, Windows, and Linux on every tag beginning with `v` and attaches the installers to a **draft** GitHub release. Review the draft, then publish it.
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
 Run the workflow manually from the Actions tab to produce downloadable build artifacts without creating a release.
@@ -123,7 +123,7 @@ Run the workflow manually from the Actions tab to produce downloadable build art
 - Click **Add music**, or drag audio files anywhere onto the page.
 - In the desktop app, use the menu or the iPod's **Add Music…** row.
 - To import a whole folder, type an optional album name and click **Load folder**. Untagged files use that album name (or the folder name), and names like `Artist - Title.opus` are parsed automatically.
-- In the desktop app, **Add Folder… → Deep search all subfolders** scans nested folders recursively and adds the whole tree at once. Leave the album name blank to use each file's folder, or set one album name to override untagged files.
+- In the desktop app, **Add Folder… → Deep search all subfolders** scans nested folders recursively and adds the whole tree at once. Each subfolder with audio becomes its own album. Leave the album name blank to keep them separate, or set one override to merge every untagged file into a single album.
 - The library is saved, so it survives reloads.
 - Supported: MP3, M4A/AAC, FLAC, WAV, OGG/Opus, and anything else the browser can decode.
 - Apple Music downloads (`.m4p`) are DRM-protected and cannot be played. Use unprotected files or your own rips.

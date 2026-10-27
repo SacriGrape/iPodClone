@@ -26,12 +26,14 @@ export type FolderImportProgress =
       phase: 'scanning'
       folders: number
       files: number
+      albumFolders: number
       skippedFolders: number
     }
   | {
       phase: 'reading'
       folders: number
       files: number
+      albumFolders: number
       parsed: number
       total: number
       failed: number
@@ -42,6 +44,7 @@ export interface FolderImportResult {
   tracks: Track[]
   folders: number
   files: number
+  albumFolders: number
   skippedFolders: number
 }
 

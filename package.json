@@ -1,7 +1,7 @@
 {
   "name": "ipodclone",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A local-first iPod clone for macOS, Windows, and Linux.",
   "author": "iPod Clone",
   "homepage": "https://github.com/SacriGrape/iPodClone",

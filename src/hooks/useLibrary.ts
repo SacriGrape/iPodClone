@@ -136,7 +136,12 @@ export function useLibrary(): Library {
     }
 
     const parts: string[] = []
-    if (added.length) parts.push(`Added ${formatCount(added.length, 'track')}.`)
+    if (added.length) {
+      const albumCount = new Set(added.map((track) => track.album)).size
+      parts.push(
+        `Added ${formatCount(added.length, 'track')}${albumCount > 1 ? ` across ${formatCount(albumCount, 'album')}` : ''}.`,
+      )
+    }
     if (duplicateCount) parts.push(`Skipped ${formatCount(duplicateCount, 'duplicate')}.`)
     if (protectedFiles.length) {
       parts.push(`Skipped ${formatCount(protectedFiles.length, 'protected Apple Music file')}.`)
@@ -168,13 +173,17 @@ export function useLibrary(): Library {
     tracksRef.current = nextTracks
     setTracks(nextTracks)
 
+    const albumCount = new Set(unique.map((track) => track.album)).size
+
     try {
       await saveTracks(unique)
     } catch {
       setError('Tracks are available now, but could not be saved for the next visit.')
     }
 
-    setNotice(`Added ${formatCount(unique.length, 'track')}.`)
+    setNotice(
+      `Added ${formatCount(unique.length, 'track')}${albumCount > 1 ? ` across ${formatCount(albumCount, 'album')}` : ''}.`,
+    )
   }, [])
 
   const removeTrackById = useCallback(async (id: string) => {

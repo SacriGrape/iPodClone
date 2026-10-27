@@ -82,7 +82,7 @@ export default function App() {
 
       if (progress.phase === 'scanning') {
         setDesktopBusy(
-          `Searching ${formatCount(progress.folders, 'folder')} · ${formatCount(progress.files, 'song')}…`,
+          `Scanning ${formatCount(progress.folders, 'folder')} · ${formatCount(progress.albumFolders, 'album folder')} · ${formatCount(progress.files, 'song')}…`,
         )
       } else {
         setDesktopBusy(
@@ -132,6 +132,7 @@ export default function App() {
         setDesktopError('No audio files were found in that folder.')
       } else if (result?.tracks.length) {
         await addTracks(result.tracks)
+        setDesktopFolderAlbum('')
         setDesktopFolderOpen(false)
       }
     } catch {
@@ -446,14 +447,16 @@ export default function App() {
           >
             <h2>Add a folder</h2>
             <p>
-              Choose a folder of audio files. Untagged files use this album name, or the name of
-              the folder they are in.
+              Choose a folder of audio files. Deep search adds every nested album folder in one
+              pass.
             </p>
             <input
               autoFocus
               value={desktopFolderAlbum}
               onChange={(event) => setDesktopFolderAlbum(event.target.value)}
-              placeholder="Album name (optional)"
+              placeholder={
+                desktopDeepScan ? 'Override all album names (optional)' : 'Album name (optional)'
+              }
               aria-label="Album name for folder import"
               disabled={Boolean(desktopBusy)}
             />
@@ -468,8 +471,12 @@ export default function App() {
             </label>
             <p className="desktop-sheet-hint">
               {desktopDeepScan
-                ? 'Scans every nested folder, so a whole music drive can be added at once. Large folders can take a while.'
-                : 'Only audio files directly inside the selected folder are added.'}
+                ? desktopFolderAlbum.trim()
+                  ? 'Album override on: every untagged file will be merged into one album. Leave it blank to add each folder as its own album.'
+                  : 'Each subfolder with audio becomes its own album. Large libraries are scanned in one pass.'
+                : desktopFolderAlbum.trim()
+                  ? `Only files directly inside this folder are added; untagged files use “${desktopFolderAlbum.trim()}”.`
+                  : 'Only files directly inside this folder are added; untagged files use the folder name.'}
             </p>
             {desktopBusy && (
               <p className="desktop-sheet-progress" role="status">

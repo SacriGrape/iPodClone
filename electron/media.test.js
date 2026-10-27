@@ -35,6 +35,7 @@ describe('deep folder scan', () => {
       [path.join(root, 'Top.mp3'), path.join(root, 'Artist', 'Album', 'Song.flac')].sort(),
     )
     expect(result.folders).toBe(3)
+    expect(result.albumFolders).toBe(2)
     expect(result.skippedFolders).toBe(0)
   })
 
@@ -82,6 +83,7 @@ describe('deep folder scan', () => {
     const albums = Object.fromEntries(result.tracks.map((track) => [track.title, track.album]))
 
     expect(result.tracks).toHaveLength(2)
+    expect(result.albumFolders).toBe(2)
     expect(albums.Loose).toBe(path.basename(root))
     expect(albums.Nested).toBe('Album')
   })

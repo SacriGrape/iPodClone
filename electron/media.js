@@ -84,6 +84,7 @@ const IGNORED_DIRECTORY_NAMES = new Set(
 
 export async function collectAudioFiles(root, { deep = true, onProgress } = {}) {
   const files = []
+  const albumFolders = new Set()
   let folders = 0
   let skippedFolders = 0
   const pending = [path.resolve(root)]
@@ -113,15 +114,21 @@ export async function collectAudioFiles(root, { deep = true, onProgress } = {}) 
             }
           } else if (entry.isFile() && isAudioPath(fullPath)) {
             files.push(fullPath)
+            albumFolders.add(path.dirname(fullPath))
           }
         }
 
-        onProgress?.({ folders, files: files.length, skippedFolders })
+        onProgress?.({
+          folders,
+          files: files.length,
+          albumFolders: albumFolders.size,
+          skippedFolders,
+        })
       }),
     )
   }
 
-  return { files, folders, skippedFolders }
+  return { files, folders, skippedFolders, albumFolders: albumFolders.size }
 }
 
 async function buildTrack(filePath, fallbackAlbum) {
@@ -223,6 +230,7 @@ export async function importAudioFolder(
         phase: 'reading',
         folders: scan.folders,
         files: scan.files.length,
+        albumFolders: scan.albumFolders,
         ...progress,
       }),
   })
@@ -232,6 +240,7 @@ export async function importAudioFolder(
     tracks,
     folders: scan.folders,
     files: scan.files.length,
+    albumFolders: scan.albumFolders,
     skippedFolders: scan.skippedFolders,
   }
 }
