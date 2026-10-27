@@ -6,7 +6,7 @@ It runs as a browser app or as a standalone macOS/Linux app. Import your own aud
 
 ## Download
 
-Download the latest build from the [Releases page](https://github.com/sacrigrape/iPodClone/releases/latest).
+Download the latest build from the [Releases page](https://github.com/SacriGrape/iPodClone/releases/latest).
 
 ### macOS
 

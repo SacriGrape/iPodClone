@@ -4,13 +4,13 @@
   "version": "0.1.0",
   "description": "A local-first iPod clone for macOS and Linux.",
   "author": "iPod Clone",
-  "homepage": "https://github.com/sacrigrape/iPodClone",
+  "homepage": "https://github.com/SacriGrape/iPodClone",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sacrigrape/iPodClone.git"
+    "url": "git+https://github.com/SacriGrape/iPodClone.git"
   },
   "bugs": {
-    "url": "https://github.com/sacrigrape/iPodClone/issues"
+    "url": "https://github.com/SacriGrape/iPodClone/issues"
   },
   "type": "module",
   "main": "electron/main.js",
@@ -78,7 +78,7 @@
         "deb"
       ],
       "icon": "build/icon.png",
-      "maintainer": "iPod Clone <sacrigrape@users.noreply.github.com>",
+      "maintainer": "iPod Clone <62363010+SacriGrape@users.noreply.github.com>",
       "synopsis": "A local-first iPod clone",
       "syncDesktopName": true,
       "artifactName": "iPod-${version}-linux-${arch}.${ext}"
