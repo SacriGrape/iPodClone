@@ -112,8 +112,8 @@ npm run desktop:open
 The GitHub Actions workflow at `.github/workflows/release.yml` builds macOS, Windows, and Linux on every tag beginning with `v` and attaches the installers to a **draft** GitHub release. Review the draft, then publish it.
 
 ```bash
-git tag v0.2.1
-git push origin v0.2.1
+git tag v0.2.2
+git push origin v0.2.2
 ```
 
 Run the workflow manually from the Actions tab to produce downloadable build artifacts without creating a release.

@@ -112,6 +112,9 @@ export default function App() {
 
   const openDesktopFolderDialog = useCallback(() => {
     setDesktopError(null)
+    // A single-album override from a previous import must never quietly
+    // collapse a new multi-album folder tree.
+    setDesktopFolderAlbum('')
     setDesktopFolderOpen(true)
   }, [])
 
