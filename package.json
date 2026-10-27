@@ -1,8 +1,8 @@
 {
   "name": "ipodclone",
   "private": true,
-  "version": "0.1.0",
-  "description": "A local-first iPod clone for macOS and Linux.",
+  "version": "0.1.1",
+  "description": "A local-first iPod clone for macOS, Windows, and Linux.",
   "author": "iPod Clone",
   "homepage": "https://github.com/SacriGrape/iPodClone",
   "repository": {
@@ -28,6 +28,7 @@
     "desktop:build": "npm run build && electron-builder --mac --dir",
     "desktop:package:mac": "npm run build && electron-builder --mac --universal --publish never",
     "desktop:package:linux": "npm run build && electron-builder --linux --x64 --publish never",
+    "desktop:package:win": "npm run build && electron-builder --win --x64 --publish never",
     "desktop:open": "open release/mac-arm64/iPod.app",
     "desktop:install": "npm run desktop:build && mkdir -p \"$HOME/Applications\" && ditto release/mac-arm64/iPod.app \"$HOME/Applications/iPod.app\" && open \"$HOME/Applications/iPod.app\""
   },
@@ -82,6 +83,27 @@
       "synopsis": "A local-first iPod clone",
       "syncDesktopName": true,
       "artifactName": "iPod-${version}-linux-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "iPod-${version}-win-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "iPod",
+      "deleteAppDataOnUninstall": false
     }
   }
 }

@@ -333,6 +333,7 @@ export default function App() {
             onNext={handleNext}
             onVolumeChange={handleVolumeChange}
             onImportMusic={openFilePicker}
+            onImportFolder={isDesktop ? openDesktopFolderDialog : undefined}
             showImport={isDesktop}
           />
           <p className="keyboard-hint keyboard-hint-desktop">

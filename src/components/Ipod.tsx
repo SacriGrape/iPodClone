@@ -67,6 +67,7 @@ interface IpodProps {
   onNext: () => void
   onVolumeChange: (volume: number) => void
   onImportMusic: () => void
+  onImportFolder?: () => void
   showImport?: boolean
 }
 
@@ -82,6 +83,7 @@ interface MenuBuildContext {
   updateSettings: (patch: Partial<Settings>) => void
   playTrack: (track: Track, context: Track[]) => void
   importMusic: () => void
+  importFolder?: () => void
 }
 
 function mouseActionLabel(action: MouseAction): string {
@@ -104,6 +106,7 @@ function buildMenu(
     updateSettings,
     playTrack,
     importMusic,
+    importFolder,
   } = context
 
   switch (view.type) {
@@ -171,6 +174,15 @@ function buildMenu(
                   label: 'Now Playing',
                   chevron: true,
                   action: () => push({ type: 'nowPlaying' }),
+                },
+              ]
+            : []),
+          ...(showImport && importFolder
+            ? [
+                {
+                  id: 'import-folder',
+                  label: 'Add Folder…',
+                  action: importFolder,
                 },
               ]
             : []),
@@ -474,6 +486,7 @@ export function Ipod({
   onNext,
   onVolumeChange,
   onImportMusic,
+  onImportFolder,
   showImport = false,
 }: IpodProps) {
   const [stack, setStack] = useState<NavEntry[]>([{ view: { type: 'main' }, selected: 0 }])
@@ -624,6 +637,7 @@ export function Ipod({
         updateSettings: onSettingsChange,
         playTrack: onPlayTrack,
         importMusic: onImportMusic,
+        importFolder: onImportFolder,
       }),
     [
       currentView,
@@ -638,6 +652,7 @@ export function Ipod({
       onSettingsChange,
       onPlayTrack,
       onImportMusic,
+      onImportFolder,
     ],
   )
 

@@ -2,7 +2,7 @@
 
 A local-first iPod clone inspired by the white click-wheel iPod on [Apple Music's 404 page](https://music.apple.com/us/jfdsalkfavsd).
 
-It runs as a browser app or as a standalone macOS/Linux app. Import your own audio, browse it through the click wheel, and play it back locally. Files are never uploaded.
+It runs as a browser app or as a standalone macOS, Windows, or Linux app. Import your own audio, browse it through the click wheel, and play it back locally. Files are never uploaded.
 
 ## Download
 
@@ -21,6 +21,16 @@ The macOS build is universal (Apple Silicon and Intel) and is **not notarized** 
 - If macOS says the app is damaged: `xattr -dr com.apple.quarantine /Applications/iPod.app`.
 
 If you would rather not bypass Gatekeeper, build it from source (below).
+
+### Windows
+
+1. Download `iPod-<version>-win-x64.exe`.
+2. Run the installer. It installs for the current user and lets you choose the folder.
+3. Launch **iPod** from the Start menu or desktop.
+
+The Windows build is **not code-signed**, so Windows SmartScreen may show “Windows protected your PC” the first time. Click **More info → Run anyway**. The installer is x64; it also runs on Windows on ARM through x64 emulation.
+
+Your library is kept when you uninstall the app.
 
 ### Linux
 
@@ -64,13 +74,13 @@ This launches a frameless, transparent window containing only the iPod. Use the 
 - **Playback** — play/pause, previous/next, volume, shuffle, repeat
 - **iPod → Settings…** — open the in-iPod settings
 
-On Linux the native menu is hidden because the window is frameless. The same actions are available through keyboard shortcuts (`Ctrl+O` for music, `Ctrl+Shift+O` for a folder, `Ctrl+P` for play/pause), and **Add Music…** is also available from the iPod's main menu. Dragging audio files onto the window works too.
+On Linux and Windows the native menu is hidden because the window is frameless. The same actions are available through keyboard shortcuts (`Ctrl+O` for music, `Ctrl+Shift+O` for a folder, `Ctrl+P` for play/pause), and **Add Music…** / **Add Folder…** are also available from the iPod's main menu. Dragging audio files onto the window works too.
 
-The window is just the iPod. Drag the white body — anywhere outside the screen and wheel controls — to move it. Use the close button on hover, or ⌘W/⌘Q on macOS (Ctrl+W/Ctrl+Q on Linux).
+The window is just the iPod. Drag the white body — anywhere outside the screen and wheel controls — to move it. Use the close button on hover, or ⌘W/⌘Q on macOS (Ctrl+W/Ctrl+Q on Linux and Windows).
 
 Desktop imports stream from disk using an `ipod://` protocol. They are not copied into the repo or into IndexedDB; only the track list and file references are stored. Keep the external drive mounted to play those tracks.
 
-Your library and settings live in `~/Library/Application Support/iPod` on macOS and `~/.config/iPod` on Linux.
+Your library and settings live in `~/Library/Application Support/iPod` on macOS, `%APPDATA%\iPod` on Windows, and `~/.config/iPod` on Linux.
 
 The browser version still uses IndexedDB blobs, so its library is separate from the desktop app.
 
@@ -80,6 +90,7 @@ Build on the platform you are packaging:
 
 ```bash
 npm run desktop:package:mac    # release/iPod-<version>-mac-universal.dmg
+npm run desktop:package:win    # release/iPod-<version>-win-x64.exe
 npm run desktop:package:linux  # release/*.AppImage and release/*.deb
 ```
 
@@ -96,11 +107,11 @@ npm run desktop:open
 
 ## Releases
 
-The GitHub Actions workflow at `.github/workflows/release.yml` builds macOS and Linux on every tag beginning with `v` and attaches the installers to a **draft** GitHub release. Review the draft, then publish it.
+The GitHub Actions workflow at `.github/workflows/release.yml` builds macOS, Windows, and Linux on every tag beginning with `v` and attaches the installers to a **draft** GitHub release. Review the draft, then publish it.
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 Run the workflow manually from the Actions tab to produce downloadable build artifacts without creating a release.
@@ -129,7 +140,7 @@ Run the workflow manually from the Actions tab to produce downloadable build art
 - IndexedDB for browser audio; disk streaming for desktop imports
 - `music-metadata` for tags, with filename/duration fallbacks
 - Vitest for pure logic tests
-- electron-builder + GitHub Actions for macOS and Linux release builds
+- electron-builder + GitHub Actions for macOS, Windows, and Linux release builds
 
 ```bash
 npm run typecheck

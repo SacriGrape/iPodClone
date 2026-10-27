@@ -20,6 +20,10 @@ const isDev = Boolean(devUrl)
 const allowedFiles = new Set()
 const allowedRoots = new Set()
 
+// setAspectRatio is supported on macOS and Windows; Linux keeps its ratio
+// through the custom corner handles in the renderer.
+const supportsAspectRatio = process.platform === 'darwin' || process.platform === 'win32'
+
 let mainWindow = null
 let alwaysOnTop = false
 let allowlistPath = ''
@@ -28,6 +32,7 @@ let minimizedMode = false
 let menuState = { shuffle: false, repeat: 'off' }
 
 app.setName('iPod')
+if (process.platform === 'win32') app.setAppUserModelId('local.ipod.clone')
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 
 protocol.registerSchemesAsPrivileged([
@@ -296,7 +301,7 @@ function setWindowMinimizedMode(minimized) {
     const y = Math.round(screenTop - compactScreen.y)
 
     minimizedMode = true
-    if (process.platform === 'darwin') mainWindow.setAspectRatio(COMPACT_ASPECT_RATIO)
+    if (supportsAspectRatio) mainWindow.setAspectRatio(COMPACT_ASPECT_RATIO)
     mainWindow.setResizable(true)
     mainWindow.setMinimumSize(COMPACT_MIN_WIDTH, COMPACT_MIN_HEIGHT)
     mainWindow.setBounds({ x, y, width, height }, false)
@@ -318,7 +323,7 @@ function setWindowMinimizedMode(minimized) {
 
   minimizedMode = false
   mainWindow.setResizable(true)
-  if (process.platform === 'darwin') mainWindow.setAspectRatio(WINDOW_ASPECT_RATIO)
+  if (supportsAspectRatio) mainWindow.setAspectRatio(WINDOW_ASPECT_RATIO)
   mainWindow.setMinimumSize(
     MIN_WINDOW_WIDTH,
     Math.round(MIN_WINDOW_WIDTH / WINDOW_ASPECT_RATIO),
@@ -354,7 +359,7 @@ function createWindow() {
   mainWindow = window
   window.setAlwaysOnTop(alwaysOnTop)
   window.setMenuBarVisibility(false)
-  if (process.platform === 'darwin') window.setAspectRatio(WINDOW_ASPECT_RATIO)
+  if (supportsAspectRatio) window.setAspectRatio(WINDOW_ASPECT_RATIO)
 
   window.once('ready-to-show', () => window.show())
   window.on('closed', () => {
