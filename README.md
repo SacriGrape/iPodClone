@@ -76,6 +76,8 @@ This launches a frameless, transparent window containing only the iPod. Use the 
 
 On Linux and Windows the native menu is hidden because the window is frameless. The same actions are available through keyboard shortcuts (`Ctrl+O` for music, `Ctrl+Shift+O` for a folder, `Ctrl+P` for play/pause), and **Add Music…** / **Add Folder…** are also available from the iPod's main menu. Dragging audio files onto the window works too.
 
+**Deep folder search:** **Add Folder…** opens a sheet with **Deep search all subfolders** enabled. It walks the whole tree, skips hidden and system folders, continues past unreadable directories, and reports scan/tag progress. Untagged files fall back to the name of the folder they are in, so a parent folder full of artist/album folders keeps the individual album names. Large libraries are imported in one pass.
+
 The window is just the iPod. Drag the white body — anywhere outside the screen and wheel controls — to move it. Use the close button on hover, or ⌘W/⌘Q on macOS (Ctrl+W/Ctrl+Q on Linux and Windows).
 
 Desktop imports stream from disk using an `ipod://` protocol. They are not copied into the repo or into IndexedDB; only the track list and file references are stored. Keep the external drive mounted to play those tracks.
@@ -110,8 +112,8 @@ npm run desktop:open
 The GitHub Actions workflow at `.github/workflows/release.yml` builds macOS, Windows, and Linux on every tag beginning with `v` and attaches the installers to a **draft** GitHub release. Review the draft, then publish it.
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 Run the workflow manually from the Actions tab to produce downloadable build artifacts without creating a release.
@@ -121,6 +123,7 @@ Run the workflow manually from the Actions tab to produce downloadable build art
 - Click **Add music**, or drag audio files anywhere onto the page.
 - In the desktop app, use the menu or the iPod's **Add Music…** row.
 - To import a whole folder, type an optional album name and click **Load folder**. Untagged files use that album name (or the folder name), and names like `Artist - Title.opus` are parsed automatically.
+- In the desktop app, **Add Folder… → Deep search all subfolders** scans nested folders recursively and adds the whole tree at once. Leave the album name blank to use each file's folder, or set one album name to override untagged files.
 - The library is saved, so it survives reloads.
 - Supported: MP3, M4A/AAC, FLAC, WAV, OGG/Opus, and anything else the browser can decode.
 - Apple Music downloads (`.m4p`) are DRM-protected and cannot be played. Use unprotected files or your own rips.
@@ -131,6 +134,17 @@ Run the workflow manually from the Actions tab to produce downloadable build art
 - **MENU** goes back; the prev/next and play/pause buttons work as expected.
 - Keyboard: click the iPod first, then use <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>Enter</kbd>, <kbd>Esc</kbd>, and <kbd>Space</kbd>.
 - In Now Playing, rotating the wheel adjusts volume and slides the progress area over to the in-screen volume slider. Use <kbd>←</kbd>/<kbd>→</kbd> to seek.
+
+### Backlight color
+
+Open **Settings → Backlight Color** to choose Ice, Warm, Mono, Aqua, Green, Amber, Rose, Violet, or Red. **Custom…** opens an RGB editor:
+
+- Rotate the wheel to change the selected channel.
+- Press the center button (or <kbd>Enter</kbd>) to switch between Red, Green, and Blue. Clicking a channel row also selects it.
+- Use <kbd>↑</kbd>/<kbd>↓</kbd> for RGB values and <kbd>←</kbd>/<kbd>→</kbd> to switch channels.
+- Press **MENU** (or <kbd>Esc</kbd>) when done.
+
+The screen itself previews the color live. Backlight Off and timed dimming still use the neutral gray-green screen.
 
 ## What's inside
 

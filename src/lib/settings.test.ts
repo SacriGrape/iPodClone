@@ -8,6 +8,7 @@ import {
   defaultSettings,
   loadSettings,
 } from './settings'
+import { DEFAULT_BACKLIGHT_COLOR } from './color'
 
 function stubSettings(raw: string | null) {
   vi.stubGlobal('localStorage', {
@@ -52,5 +53,17 @@ describe('wheel calibration', () => {
     const settings = loadSettings()
     expect(settings.mouseSide1).toBe('previous')
     expect(settings.mouseSide2).toBe('none')
+  })
+
+  it('defaults the backlight color and accepts stored RGB colors', () => {
+    expect(defaultSettings().backlightColor).toBe(DEFAULT_BACKLIGHT_COLOR)
+
+    stubSettings(JSON.stringify({ backlightColor: '#A1B2C3' }))
+    expect(loadSettings().backlightColor).toBe('#a1b2c3')
+  })
+
+  it('rejects invalid stored backlight colors', () => {
+    stubSettings(JSON.stringify({ backlightColor: 'red' }))
+    expect(loadSettings().backlightColor).toBe(DEFAULT_BACKLIGHT_COLOR)
   })
 })

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+  CSSProperties,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
@@ -15,14 +16,23 @@ import {
 import { formatBytes, formatDuration, formatLongDuration } from '../lib/format'
 import { totalDuration, totalSize } from '../lib/library'
 import { clampIndex, stepIndex } from '../lib/navigation'
+import {
+  BACKLIGHT_COLOR_PRESETS,
+  adjustBacklightChannel,
+  backlightColorLabel,
+} from '../lib/color'
+import type { ColorChannel } from '../lib/color'
 import { BrickGame } from './BrickGame'
 import type { BrickGameHandle } from './BrickGame'
+import { BacklightColorEditor } from './BacklightColorEditor'
 import { ClickWheel } from './ClickWheel'
 import { PlayIcon } from './Icons'
 import { MenuList } from './MenuList'
 import { NowPlaying } from './NowPlaying'
 import { WheelCalibration } from './WheelCalibration'
 import type { MenuItem } from './menu-types'
+
+const BACKLIGHT_RGB_STEP = 5
 
 type View =
   | { type: 'main' }
@@ -34,6 +44,8 @@ type View =
   | { type: 'nowPlaying' }
   | { type: 'settings' }
   | { type: 'backlight' }
+  | { type: 'backlightColor' }
+  | { type: 'backlightCustom'; channel: ColorChannel }
   | { type: 'wheel' }
   | { type: 'mouseButtons' }
   | { type: 'mouseButton'; button: 'side1' | 'side2' }
@@ -339,6 +351,14 @@ function buildMenu(
             action: () => push({ type: 'backlight' }),
           },
           {
+            id: 'backlightColor',
+            label: 'Backlight Color',
+            value: backlightColorLabel(settings.backlightColor),
+            swatch: settings.backlightColor,
+            chevron: true,
+            action: () => push({ type: 'backlightColor' }),
+          },
+          {
             id: 'clicker',
             label: 'Clicker',
             value: clickerLabel,
@@ -381,6 +401,36 @@ function buildMenu(
           },
         })),
       }
+
+    case 'backlightColor': {
+      const isPreset = BACKLIGHT_COLOR_PRESETS.some(
+        (preset) => preset.color === settings.backlightColor,
+      )
+
+      return {
+        title: 'Color',
+        items: [
+          ...BACKLIGHT_COLOR_PRESETS.map((preset) => ({
+            id: `backlight-color:${preset.color}`,
+            label: preset.label,
+            value: settings.backlightColor === preset.color ? '✓' : undefined,
+            swatch: preset.color,
+            action: () => updateSettings({ backlightColor: preset.color }),
+          })),
+          {
+            id: 'backlight-color:custom',
+            label: 'Custom…',
+            value: isPreset ? undefined : settings.backlightColor.toUpperCase(),
+            swatch: isPreset ? undefined : settings.backlightColor,
+            chevron: true,
+            action: () => push({ type: 'backlightCustom', channel: 'r' }),
+          },
+        ],
+      }
+    }
+
+    case 'backlightCustom':
+      return { title: 'Color', items: [] }
 
     case 'wheel':
       return { title: 'Scroll Wheel', items: [] }
@@ -698,6 +748,54 @@ export function Ipod({
     activateIndex(selectedIndex)
   }, [activateIndex, selectedIndex])
 
+  const setColorChannel = useCallback((channel: ColorChannel) => {
+    setStack((previous) => {
+      const top = previous[previous.length - 1]
+      if (top?.view.type !== 'backlightCustom' || top.view.channel === channel) {
+        return previous
+      }
+
+      return [
+        ...previous.slice(0, -1),
+        { ...top, view: { type: 'backlightCustom', channel } },
+      ]
+    })
+  }, [])
+
+  const cycleColorChannel = useCallback((direction: number) => {
+    const channels: ColorChannel[] = ['r', 'g', 'b']
+
+    setStack((previous) => {
+      const top = previous[previous.length - 1]
+      if (top?.view.type !== 'backlightCustom') return previous
+
+      const index = channels.indexOf(top.view.channel)
+      const channel = channels[(index + direction + channels.length) % channels.length]
+      if (!channel) return previous
+
+      return [
+        ...previous.slice(0, -1),
+        { ...top, view: { type: 'backlightCustom', channel } },
+      ]
+    })
+  }, [])
+
+  const adjustBacklightColor = useCallback(
+    (direction: number) => {
+      if (currentView.type !== 'backlightCustom') return
+
+      onSettingsChange({
+        backlightColor: adjustBacklightChannel(
+          settings.backlightColor,
+          currentView.channel,
+          direction * BACKLIGHT_RGB_STEP,
+        ),
+      })
+      wake()
+    },
+    [currentView, onSettingsChange, settings.backlightColor, wake],
+  )
+
   const startVolumeMode = useCallback(() => {
     setVolumeMode(true)
 
@@ -773,6 +871,11 @@ export function Ipod({
         return
       }
 
+      if (currentView.type === 'backlightCustom') {
+        adjustBacklightColor(direction)
+        return
+      }
+
       player.click()
 
       if (currentView.type === 'brick') {
@@ -787,7 +890,7 @@ export function Ipod({
 
       move(direction)
     },
-    [adjustVolume, currentView.type, move, player, wake],
+    [adjustBacklightColor, adjustVolume, currentView.type, move, player, wake],
   )
 
   const handleMenu = useCallback(() => {
@@ -815,8 +918,23 @@ export function Ipod({
       return
     }
 
+    if (currentView.type === 'backlightCustom') {
+      player.click()
+      wake()
+      cycleColorChannel(1)
+      return
+    }
+
     activateSelected()
-  }, [activateSelected, currentView.type, focusDevice, player, pop, wake])
+  }, [
+    activateSelected,
+    currentView.type,
+    cycleColorChannel,
+    focusDevice,
+    player,
+    pop,
+    wake,
+  ])
 
   const handleScreenMiddleMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -957,6 +1075,40 @@ export function Ipod({
         return
       }
 
+      if (currentView.type === 'backlightCustom') {
+        switch (event.key) {
+          case 'ArrowUp':
+            event.preventDefault()
+            adjustBacklightColor(1)
+            break
+          case 'ArrowDown':
+            event.preventDefault()
+            adjustBacklightColor(-1)
+            break
+          case 'ArrowLeft':
+          case 'ArrowRight':
+            event.preventDefault()
+            player.click()
+            wake()
+            cycleColorChannel(event.key === 'ArrowRight' ? 1 : -1)
+            break
+          case 'Enter':
+            event.preventDefault()
+            player.click()
+            wake()
+            cycleColorChannel(1)
+            break
+          case 'Escape':
+          case 'Backspace':
+            event.preventDefault()
+            handleMenu()
+            break
+          default:
+            break
+        }
+        return
+      }
+
       const nowPlaying = currentView.type === 'nowPlaying'
 
       switch (event.key) {
@@ -1025,7 +1177,9 @@ export function Ipod({
       handlePlayPause,
       handlePrevious,
       handleSelect,
+      adjustBacklightColor,
       adjustVolume,
+      cycleColorChannel,
       move,
       player,
       wake,
@@ -1048,7 +1202,11 @@ export function Ipod({
         onMouseDown={handleScreenMiddleMouseDown}
         onAuxClick={handleScreenMiddleClick}
       >
-        <div className={`screen${dimmed ? ' is-dimmed' : ' is-backlit'}`}>
+        <div
+          className={`screen${dimmed ? ' is-dimmed' : ' is-backlit'}`}
+          style={{ '--backlight-color': settings.backlightColor } as CSSProperties}
+        >
+          <span className="screen-backlight" aria-hidden="true" />
           <div className="screen-content">
             {currentView.type === 'brick' ? (
               <BrickGame ref={brickRef} />
@@ -1076,6 +1234,12 @@ export function Ipod({
                     currentStep={settings.wheelStep}
                     onCalibrate={calibrateWheel}
                     onActivity={wake}
+                  />
+                ) : currentView.type === 'backlightCustom' ? (
+                  <BacklightColorEditor
+                    color={settings.backlightColor}
+                    channel={currentView.channel}
+                    onSelectChannel={setColorChannel}
                   />
                 ) : (
                   <MenuList

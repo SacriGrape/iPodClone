@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { ChangeEvent } from 'react'
 import type { Track } from './types'
-import type { DesktopMenuAction } from './desktop'
+import type { DesktopMenuAction, FolderImportProgress } from './desktop'
 import { Ipod } from './components/Ipod'
 import { LibraryPanel } from './components/LibraryPanel'
 import { WindowResizeHandles } from './components/WindowResizeHandles'
 import { UploadIcon } from './components/Icons'
 import { useLibrary } from './hooks/useLibrary'
 import { useSettings } from './hooks/useSettings'
+import { formatCount } from './lib/format'
 import { buildArtists, buildPlaylists, sortTracks } from './lib/library'
 import { getPlayer } from './lib/player'
 
@@ -37,8 +38,10 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [desktopFolderOpen, setDesktopFolderOpen] = useState(false)
   const [desktopFolderAlbum, setDesktopFolderAlbum] = useState('')
+  const [desktopDeepScan, setDesktopDeepScan] = useState(true)
   const [desktopBusy, setDesktopBusy] = useState<string | null>(null)
   const [desktopError, setDesktopError] = useState<string | null>(null)
+  const folderImportActiveRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const playlists = useMemo(() => buildPlaylists(tracks), [tracks])
@@ -71,6 +74,24 @@ export default function App() {
     return () => window.clearTimeout(timeout)
   }, [desktopError])
 
+  useEffect(() => {
+    if (!desktop) return
+
+    return desktop.onFolderProgress((progress: FolderImportProgress) => {
+      if (!folderImportActiveRef.current) return
+
+      if (progress.phase === 'scanning') {
+        setDesktopBusy(
+          `Searching ${formatCount(progress.folders, 'folder')} · ${formatCount(progress.files, 'song')}…`,
+        )
+      } else {
+        setDesktopBusy(
+          `Reading tags ${progress.parsed}/${progress.total}${progress.failed ? ` · ${progress.failed} failed` : ''}…`,
+        )
+      }
+    })
+  }, [desktop])
+
   const openFilePicker = useCallback(() => {
     if (!desktop) {
       fileInputRef.current?.click()
@@ -98,20 +119,28 @@ export default function App() {
     if (!desktop) return
 
     setDesktopError(null)
+    folderImportActiveRef.current = true
     setDesktopBusy('Scanning folder…')
 
     try {
-      const result = await desktop.pickAudioFolder(desktopFolderAlbum.trim() || undefined)
-      if (result?.tracks.length) {
+      const result = await desktop.pickAudioFolder({
+        albumName: desktopFolderAlbum.trim() || undefined,
+        deepScan: desktopDeepScan,
+      })
+
+      if (result && result.tracks.length === 0) {
+        setDesktopError('No audio files were found in that folder.')
+      } else if (result?.tracks.length) {
         await addTracks(result.tracks)
         setDesktopFolderOpen(false)
       }
     } catch {
       setDesktopError('Could not read the selected folder.')
     } finally {
+      folderImportActiveRef.current = false
       setDesktopBusy(null)
     }
-  }, [addTracks, desktop, desktopFolderAlbum])
+  }, [addTracks, desktop, desktopDeepScan, desktopFolderAlbum])
 
   const handleFileInput = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -297,7 +326,11 @@ export default function App() {
     }
   }, [importFiles])
 
-  const desktopMessage = desktopBusy ?? desktopError ?? playerState.error ?? notice
+  const desktopMessage =
+    (desktopFolderOpen ? null : desktopBusy) ??
+    desktopError ??
+    playerState.error ??
+    notice
 
   return (
     <div className={`app${isDesktop ? ' is-desktop' : ''}`}>
@@ -413,8 +446,8 @@ export default function App() {
           >
             <h2>Add a folder</h2>
             <p>
-              Choose a folder of audio files. Untagged files use this album name, or the folder
-              name.
+              Choose a folder of audio files. Untagged files use this album name, or the name of
+              the folder they are in.
             </p>
             <input
               autoFocus
@@ -424,6 +457,25 @@ export default function App() {
               aria-label="Album name for folder import"
               disabled={Boolean(desktopBusy)}
             />
+            <label className="desktop-sheet-check">
+              <input
+                type="checkbox"
+                checked={desktopDeepScan}
+                onChange={(event) => setDesktopDeepScan(event.target.checked)}
+                disabled={Boolean(desktopBusy)}
+              />
+              <span>Deep search all subfolders</span>
+            </label>
+            <p className="desktop-sheet-hint">
+              {desktopDeepScan
+                ? 'Scans every nested folder, so a whole music drive can be added at once. Large folders can take a while.'
+                : 'Only audio files directly inside the selected folder are added.'}
+            </p>
+            {desktopBusy && (
+              <p className="desktop-sheet-progress" role="status">
+                {desktopBusy}
+              </p>
+            )}
             <div className="desktop-sheet-actions">
               <button
                 type="button"
@@ -433,7 +485,7 @@ export default function App() {
                 Cancel
               </button>
               <button type="submit" disabled={Boolean(desktopBusy)}>
-                {desktopBusy ?? 'Choose Folder…'}
+                {desktopBusy ? 'Scanning…' : 'Choose Folder…'}
               </button>
             </div>
           </form>

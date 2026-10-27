@@ -55,6 +55,13 @@ export function MenuList({ items, selected, onActivate }: MenuListProps) {
             onClick={() => onActivate(index)}
           >
             <span className="menu-label">{item.label}</span>
+            {item.swatch && (
+              <span
+                className="menu-swatch"
+                style={{ background: item.swatch }}
+                aria-hidden="true"
+              />
+            )}
             {item.value !== undefined && <span className="menu-value">{item.value}</span>}
             {item.chevron && <span className="menu-chevron" aria-hidden="true" />}
           </div>

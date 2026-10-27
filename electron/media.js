@@ -70,19 +70,58 @@ export function pathFromMediaToken(token) {
   return Buffer.from(token, 'base64url').toString('utf8')
 }
 
-async function collectAudioFiles(directory, output) {
-  const entries = await fs.readdir(directory, { withFileTypes: true })
+const SCAN_CONCURRENCY = 8
+const IGNORED_DIRECTORY_NAMES = new Set(
+  [
+    '$RECYCLE.BIN',
+    'System Volume Information',
+    'node_modules',
+    'lost+found',
+    '@eaDir',
+    '#recycle',
+  ].map((name) => name.toLowerCase()),
+)
 
-  for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
+export async function collectAudioFiles(root, { deep = true, onProgress } = {}) {
+  const files = []
+  let folders = 0
+  let skippedFolders = 0
+  const pending = [path.resolve(root)]
 
-    const fullPath = path.join(directory, entry.name)
-    if (entry.isDirectory()) {
-      await collectAudioFiles(fullPath, output)
-    } else if (entry.isFile() && isAudioPath(fullPath)) {
-      output.push(fullPath)
-    }
+  while (pending.length > 0) {
+    const batch = pending.splice(0, SCAN_CONCURRENCY)
+
+    await Promise.all(
+      batch.map(async (directory) => {
+        let entries
+        try {
+          entries = await fs.readdir(directory, { withFileTypes: true })
+        } catch {
+          skippedFolders += 1
+          return
+        }
+
+        folders += 1
+
+        for (const entry of entries) {
+          if (entry.name.startsWith('.') || entry.isSymbolicLink()) continue
+
+          const fullPath = path.join(directory, entry.name)
+          if (entry.isDirectory()) {
+            if (deep && !IGNORED_DIRECTORY_NAMES.has(entry.name.toLowerCase())) {
+              pending.push(fullPath)
+            }
+          } else if (entry.isFile() && isAudioPath(fullPath)) {
+            files.push(fullPath)
+          }
+        }
+
+        onProgress?.({ folders, files: files.length, skippedFolders })
+      }),
+    )
   }
+
+  return { files, folders, skippedFolders }
 }
 
 async function buildTrack(filePath, fallbackAlbum) {
@@ -131,9 +170,11 @@ async function buildTrack(filePath, fallbackAlbum) {
   }
 }
 
-export async function importAudioFiles(filePaths, { fallbackAlbum } = {}) {
+export async function importAudioFiles(filePaths, { fallbackAlbum, onProgress } = {}) {
   const tracks = []
   let cursor = 0
+  let parsed = 0
+  let failed = 0
 
   const workers = Array.from(
     { length: Math.min(4, Math.max(1, filePaths.length)) },
@@ -145,6 +186,10 @@ export async function importAudioFiles(filePaths, { fallbackAlbum } = {}) {
           tracks.push(await buildTrack(filePath, fallbackAlbum))
         } catch {
           // Skip unreadable files; the renderer still gets the rest of the import.
+          failed += 1
+        } finally {
+          parsed += 1
+          onProgress?.({ parsed, total: filePaths.length, failed })
         }
       }
     },
@@ -158,17 +203,37 @@ export async function importAudioFiles(filePaths, { fallbackAlbum } = {}) {
   )
 }
 
-export async function importAudioFolder(root, { fallbackAlbum } = {}) {
+export async function importAudioFolder(
+  root,
+  { fallbackAlbum, deep = true, onProgress } = {},
+) {
   const resolvedRoot = path.resolve(root)
-  const files = []
-  await collectAudioFiles(resolvedRoot, files)
-
-  const folderName = path.basename(resolvedRoot)
-  const tracks = await importAudioFiles(files, {
-    fallbackAlbum: cleanText(fallbackAlbum) ?? folderName,
+  const scan = await collectAudioFiles(resolvedRoot, {
+    deep,
+    onProgress: (progress) => onProgress?.({ phase: 'scanning', ...progress }),
   })
 
-  return { folderName, tracks }
+  const folderName = path.basename(resolvedRoot)
+  const tracks = await importAudioFiles(scan.files, {
+    // Without an explicit override, each file falls back to its immediate
+    // folder, so nested artist/album folders keep their own album names.
+    fallbackAlbum: cleanText(fallbackAlbum),
+    onProgress: (progress) =>
+      onProgress?.({
+        phase: 'reading',
+        folders: scan.folders,
+        files: scan.files.length,
+        ...progress,
+      }),
+  })
+
+  return {
+    folderName,
+    tracks,
+    folders: scan.folders,
+    files: scan.files.length,
+    skippedFolders: scan.skippedFolders,
+  }
 }
 
 function cleanText(value) {

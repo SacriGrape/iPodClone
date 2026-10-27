@@ -25,6 +25,7 @@ export interface Settings {
   shuffle: boolean
   repeat: RepeatMode
   backlight: BacklightMode
+  backlightColor: string
   clicker: ClickerMode
   wheelStep: number
   mouseSide1: MouseAction

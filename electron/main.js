@@ -240,6 +240,22 @@ function send(action) {
   target?.webContents.send('desktop:menu-action', action)
 }
 
+function folderProgressReporter(webContents) {
+  let lastSentAt = 0
+
+  return (progress) => {
+    const now = Date.now()
+    const isFinalReading =
+      progress.phase === 'reading' && progress.parsed === progress.total
+    if (now - lastSentAt < 150 && !isFinalReading) return
+
+    lastSentAt = now
+    if (!webContents.isDestroyed()) {
+      webContents.send('desktop:folder-progress', progress)
+    }
+  }
+}
+
 async function showOpenDialog(options) {
   return mainWindow
     ? dialog.showOpenDialog(mainWindow, options)
@@ -558,7 +574,11 @@ ipcMain.handle('desktop:pick-audio-files', async () => {
   return { tracks: await importAudioFiles(realPaths) }
 })
 
-ipcMain.handle('desktop:pick-audio-folder', async (_event, albumName) => {
+ipcMain.handle('desktop:pick-audio-folder', async (event, options) => {
+  const importOptions = options && typeof options === 'object' ? options : {}
+  const albumName =
+    typeof importOptions.albumName === 'string' ? importOptions.albumName : undefined
+  const deepScan = importOptions.deepScan !== false
   const result = await showOpenDialog({
     title: 'Add Folder',
     properties: ['openDirectory', 'createDirectory'],
@@ -577,7 +597,9 @@ ipcMain.handle('desktop:pick-audio-folder', async (_event, albumName) => {
   await saveAllowlist()
 
   return importAudioFolder(root, {
-    fallbackAlbum: typeof albumName === 'string' ? albumName : undefined,
+    fallbackAlbum: albumName,
+    deep: deepScan,
+    onProgress: folderProgressReporter(event.sender),
   })
 })
 

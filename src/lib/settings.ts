@@ -5,6 +5,7 @@ import type {
   RepeatMode,
   Settings,
 } from '../types'
+import { DEFAULT_BACKLIGHT_COLOR, isHexColor, normalizeHexColor } from './color'
 
 export const SETTINGS_KEY = 'ipod-clone:settings'
 
@@ -69,6 +70,7 @@ export function defaultSettings(): Settings {
     shuffle: false,
     repeat: 'off',
     backlight: 'always',
+    backlightColor: DEFAULT_BACKLIGHT_COLOR,
     clicker: 'on',
     wheelStep: DEFAULT_WHEEL_STEP,
     mouseSide1: 'back',
@@ -92,6 +94,9 @@ export function loadSettings(): Settings {
       shuffle: typeof parsed.shuffle === 'boolean' ? parsed.shuffle : fallback.shuffle,
       repeat: isRepeatMode(parsed.repeat) ? parsed.repeat : fallback.repeat,
       backlight: isBacklightMode(parsed.backlight) ? parsed.backlight : fallback.backlight,
+      backlightColor: isHexColor(parsed.backlightColor)
+        ? normalizeHexColor(parsed.backlightColor) ?? fallback.backlightColor
+        : fallback.backlightColor,
       clicker: isClickerMode(parsed.clicker) ? parsed.clicker : fallback.clicker,
       wheelStep:
         typeof parsed.wheelStep === 'number' && Number.isFinite(parsed.wheelStep)
