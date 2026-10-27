@@ -1,0 +1,87 @@
+{
+  "name": "ipodclone",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A local-first iPod clone for macOS and Linux.",
+  "author": "iPod Clone",
+  "homepage": "https://github.com/sacrigrape/iPodClone",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sacrigrape/iPodClone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sacrigrape/iPodClone/issues"
+  },
+  "type": "module",
+  "main": "electron/main.js",
+  "desktopName": "iPod",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "desktop:dev": "node scripts/dev-desktop.mjs",
+    "desktop:start": "electron .",
+    "desktop:build": "npm run build && electron-builder --mac --dir",
+    "desktop:package:mac": "npm run build && electron-builder --mac --universal --publish never",
+    "desktop:package:linux": "npm run build && electron-builder --linux --x64 --publish never",
+    "desktop:open": "open release/mac-arm64/iPod.app",
+    "desktop:install": "npm run desktop:build && mkdir -p \"$HOME/Applications\" && ditto release/mac-arm64/iPod.app \"$HOME/Applications/iPod.app\" && open \"$HOME/Applications/iPod.app\""
+  },
+  "dependencies": {
+    "music-metadata": "^12.3.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "oxlint": "^1.88.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  },
+  "build": {
+    "appId": "local.ipod.clone",
+    "productName": "iPod",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "afterPack": "scripts/after-pack.cjs",
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        "dmg"
+      ],
+      "identity": null,
+      "icon": "build/icon.icns",
+      "artifactName": "iPod-${version}-mac-${arch}.${ext}"
+    },
+    "linux": {
+      "category": "AudioVideo",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "maintainer": "iPod Clone <sacrigrape@users.noreply.github.com>",
+      "synopsis": "A local-first iPod clone",
+      "syncDesktopName": true,
+      "artifactName": "iPod-${version}-linux-${arch}.${ext}"
+    }
+  }
+}
